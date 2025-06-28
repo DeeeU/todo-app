@@ -39,7 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'corsheaders',
-    'todo_app',  # Your todo app
+    'todos',  # Your todos app
 ]
 
 CORS_ALLOWED_ORIGINS = [
