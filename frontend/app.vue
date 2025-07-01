@@ -1,52 +1,47 @@
 <template>
-  <div class="min-h-screen bg-gray-50 py-8">
-    <div class="max-w-md mx-auto bg-white rounded-lg shadow-md p-6">
-      <h1 class="text-2xl font-bold text-gray-800 mb-4">
-        🎉 Todo App - Frontend Ready!
-      </h1>
+  <div class="p-8">
+    <h1 class="text-2xl font-bold mb-4">🔍 デバッグモード</h1>
 
-      <div class="space-y-2">
-        <div class="flex items-center space-x-2">
-          <input
-            type="checkbox"
-            class="w-4 h-4 text-blue-600"
-            checked
-          >
-          <span class="text-gray-700 line-through">Django REST API 完成</span>
-        </div>
+    <button
+      @click="testFetch"
+      class="bg-blue-500 text-white px-4 py-2 rounded mb-4"
+    >
+      APIを直接テスト
+    </button>
 
-        <div class="flex items-center space-x-2">
-          <input
-            type="checkbox"
-            class="w-4 h-4 text-blue-600"
-            checked
-          >
-          <span class="text-gray-700 line-through">Nuxt.js 環境構築</span>
-        </div>
-
-        <div class="flex items-center space-x-2">
-          <input
-            type="checkbox"
-            class="w-4 h-4 text-blue-600"
-            checked
-          >
-          <span class="text-gray-700 line-through">Tailwind CSS 導入</span>
-        </div>
-
-        <div class="flex items-center space-x-2">
-          <input
-            type="checkbox"
-            class="w-4 h-4 text-blue-600"
-          >
-          <span class="text-gray-700">Todo画面作成 ← Next!</span>
-        </div>
-      </div>
-
-      <div class="mt-6 p-4 bg-blue-50 rounded-lg">
-        <p class="text-sm text-blue-700">
-          💡 Tailwind CSS が正常に動作しています！
-        </p>
-      </div>
+    <div class="bg-gray-100 p-4 rounded">
+      <h2 class="font-bold">結果:</h2>
+      <p><strong>データ型:</strong> {{ dataType }}</p>
+      <p><strong>配列か:</strong> {{ isArray }}</p>
+      <p><strong>件数:</strong> {{ count }}</p>
+      <p><strong>最初の要素:</strong></p>
+      <pre class="bg-white p-2 rounded mt-2 text-sm">{{ firstItem }}</pre>
     </div>
   </div>
 </template>
+
+<script setup lang="ts">
+const { fetchTodos } = useTodos()
+
+const dataType = ref('')
+const isArray = ref(false)
+const count = ref(0)
+const firstItem = ref(null)
+
+const testFetch = async () => {
+  console.log('=== 直接テスト開始 ===')
+
+  const result = await fetchTodos()
+
+  dataType.value = typeof result
+  isArray.value = Array.isArray(result)
+  count.value = result?.length || 0
+  firstItem.value = result?.[0] || null
+
+  console.log('=== テスト結果 ===')
+  console.log('型:', typeof result)
+  console.log('配列:', Array.isArray(result))
+  console.log('件数:', result?.length)
+  console.log('生データ:', result)
+}
+</script>
