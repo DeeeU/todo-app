@@ -10,6 +10,13 @@
       </div>
 
       <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+        <!-- 成功メッセージ -->
+        <div
+          v-if="successMessage"
+          class="mb-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded-md"
+          >
+          {{  successMessage }}
+        </div>
         <h2 class="text-lg font-semibold text-gray-700 mb-4">新しいTodoを追加</h2>
 
         <form @submit.prevent="addTodo" class="space-y-3">
@@ -19,13 +26,15 @@
             placeholder="タイトルを入力..."
             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             required
+            @keydown.enter.prevent="focusDescription"
           >
-
           <textarea
+            ref="descriptionInput"
             v-model="newTodo.description"
             placeholder="説明（任意）"
             rows="2"
             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            @keydown.ctrl.enter="addTodo"
           ></textarea>
 
           <button
@@ -148,6 +157,8 @@
 const { fetchTodos, createTodo, updateTodo, deleteTodo } = useTodos()
 
 // リアクティブデータ
+const descriptionInput = ref()
+const successMessage = ref('')
 const todos = ref<Todo[]>([])
 const loading = ref(true)
 const newTodo = reactive({
@@ -204,8 +215,23 @@ const addTodo = async () => {
     todos.value.unshift(createdTodo) // 先頭に追加
     newTodo.title = ''
     newTodo.description = ''
+
+    showSuccessMessage('Todoを追加しました！')
   }
   loading.value = false
+}
+
+const focusDescription = () => {
+  nextTick(() => {
+    descriptionInput.value?.focus()
+  })
+}
+
+const showSuccessMessage = (message: string) => {
+  successMessage.value = message
+  setTimeout(() => {
+    successMessage.value = ''
+  }, 3000)
 }
 
 const toggleTodo = async (todo: Todo) => {
