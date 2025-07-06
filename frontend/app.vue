@@ -47,6 +47,29 @@
         </form>
       </div>
 
+      <div class="bg-white rounded-lg shadow-md p-4 mb-6">
+        <div class="reactive">
+          <input
+            v-model="searchQuery"
+            @input="debouncedSearch"
+            type="text"
+            placeholder="🔍 Todoを検索..."
+            class="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+          <div class="absolute left-3 top-2.5 text-gray-400">
+            🔍
+          </div>
+
+          <div v-if="isSearching" class="absolute right-3 top-2.5">
+            <div class="animate-spin h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full"></div>
+          </div>
+        </div>
+
+        <div v-if="searchQuery" class="mt-2 text-sm text-gray-500">
+          "{{ searchQuery }}"の検索結果: {{ todos.length }}件
+        </div>
+      </div>
+
       <div class="bg-white rounded-lg shadow-md">
         <!-- ヘッダー -->
         <div class="px-6 py-4 border-b border-gray-200">
@@ -157,6 +180,8 @@
 const { fetchTodos, createTodo, updateTodo, deleteTodo } = useTodos()
 
 // リアクティブデータ
+const searchQuery = ref('')
+const isSearching = ref(false)
 const descriptionInput = ref()
 const successMessage = ref('')
 const todos = ref<Todo[]>([])
@@ -166,6 +191,43 @@ const newTodo = reactive({
   description: ''
 })
 
+// バウンス用のタイマー
+let searchTimeout: NodeJS.Timeout | null = null
+
+const debouncedSearch = () => {
+  isSearching.value = true
+
+  // 前回のタイマーをクリア
+  if (searchTimeout) {
+    clearTimeout(searchTimeout)
+  }
+
+  // 500ms後に検索実行
+  searchTimeout = setTimeout(async () => {
+    await refreshTodos()
+    isSearching.value = false
+  }, 500)
+}
+
+// Todoリスト取得を検索対応に修正
+const refreshTodos = async () => {
+  console.log('refreshTodos 開始')
+  loading.value = true
+  try {
+    // 検索クエリがあれば検索APIを使用
+    const { fetchTodos } = useTodos()
+    const searchParams = searchQuery.value.trim()
+      ? { search: searchQuery.value.trim() }
+      : {}
+
+    todos.value = await fetchTodos(searchParams)
+    console.log('Todo取得完了:', todos.value.length, '件')
+  } catch (error) {
+    console.error('リフレッシュエラー:', error)
+  } finally {
+    loading.value = false
+  }
+}
 // 計算プロパティ（セーフガード付き）
 const completedCount = computed(() => {
   if (!Array.isArray(todos.value)) {
@@ -187,20 +249,6 @@ const progressPercentage = computed(() => {
   }
   return Math.round((completedCount.value / todos.value.length) * 100)
 })
-
-// メソッド
-const refreshTodos = async () => {
-  console.log('refreshTodos 開始')
-  loading.value = true
-  try {
-    todos.value = await fetchTodos()
-    console.log('Todo取得完了:', todos.value.length, '件')
-  } catch (error) {
-    console.error('リフレッシュエラー:', error)
-  } finally {
-    loading.value = false
-  }
-}
 
 const addTodo = async () => {
   if (!newTodo.title.trim()) return

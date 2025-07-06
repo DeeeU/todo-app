@@ -11,10 +11,39 @@ export const useTodos = () => {
   const config = useRuntimeConfig()
   const apiBase = config.public.apiBase
 
-  const fetchTodos = async (): Promise<Todo[]> => {
+  const fetchTodos = async (params: Record<string, string> = {}): Promise<Todo[]> => {
     try {
-      const data = await $fetch<Todo[]>(`${apiBase}/todos/`)
-      return data
+      const searchParams = new URLSearchParams(params)
+      const queryString = searchParams.toString()
+      const url = queryString
+        ? `${apiBase}/todos/?${queryString}`
+        : `${apiBase}/todos/`
+
+      console.log('API呼び出し開始:', url)
+      const data = await $fetch<any>(url)
+
+      const todos = data.results || data
+      const meta = data.meta
+
+      console.log('API応答（型）:', typeof todos)
+      console.log('API応答（配列か）:', Array.isArray(todos))
+      console.log('API応答（件数）:', todos?.length)
+
+      if (meta) {
+        console.log('検索統計:', {
+          total: meta.total_count,
+          completed: meta.completed_count,
+          pending: meta.pending_count,
+          query: meta.search_query
+        })
+      }
+
+      if (!Array.isArray(todos)) {
+        console.error('APIの応答が配列ではありません:', todos)
+        return []
+      }
+
+      return todos
     } catch (error) {
       console.error('Todo取得エラー:', error)
       return []
