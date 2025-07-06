@@ -215,7 +215,6 @@ const refreshTodos = async () => {
   loading.value = true
   try {
     // 検索クエリがあれば検索APIを使用
-    const { fetchTodos } = useTodos()
     const searchParams = searchQuery.value.trim()
       ? { search: searchQuery.value.trim() }
       : {}
