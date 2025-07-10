@@ -1,3 +1,10 @@
+export interface User {
+  id: number
+  name: string
+  email: string
+  created_at: string
+}
+
 export interface Todo {
   id: number
   title: string
@@ -5,6 +12,7 @@ export interface Todo {
   completed: boolean
   created_at: string
   updated_at: string
+  owner: User
 }
 
 export const useTodos = () => {

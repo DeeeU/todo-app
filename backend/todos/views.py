@@ -1,3 +1,4 @@
+# todos/views.py
 from rest_framework import viewsets
 from rest_framework.response import Response
 from django.db.models import Q
@@ -21,18 +22,15 @@ class TodoViewSet(viewsets.ModelViewSet):
     serializer_class = TodoSerializer
 
     def get_queryset(self):
-        """
-        クエリパラメータに基づいてTodoを絞り込み
-        """
-        queryset = Todo.objects.all()
+        queryset = Todo.objects.select_related('owner').all()
 
         # 検索クエリ（タイトルでの部分一致）
         search_query = self.request.query_params.get('search', None)
         if search_query:
-
             queryset = queryset.filter(
-                Q(title__icontains=search_query) |  # タイトルに含まれる
-                Q(description__icontains=search_query)  # または説明に含まれる
+                Q(title__icontains=search_query) |        # タイトルに含まれる
+                Q(description__icontains=search_query) |  # または説明に含まれる
+                Q(owner__name__icontains=search_query)    # またはowner名に含まれる
             )
 
         # 完了状態での絞り込み
