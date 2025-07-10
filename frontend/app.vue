@@ -1,7 +1,6 @@
 <template>
   <div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8">
     <div class="max-w-md mx-auto">
-      <!-- ヘッダー -->
       <div class="text-center mb-8">
         <h1 class="text-3xl font-bold text-gray-800 mb-2">
           📝 My Todo App
@@ -10,13 +9,13 @@
       </div>
 
       <div class="bg-white rounded-lg shadow-md p-6 mb-6">
-        <!-- 成功メッセージ -->
         <div
           v-if="successMessage"
           class="mb-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded-md"
-          >
-          {{  successMessage }}
+        >
+          {{ successMessage }}
         </div>
+
         <h2 class="text-lg font-semibold text-gray-700 mb-4">新しいTodoを追加</h2>
 
         <form @submit.prevent="addTodo" class="space-y-3">
@@ -48,7 +47,7 @@
       </div>
 
       <div class="bg-white rounded-lg shadow-md p-4 mb-6">
-        <div class="reactive">
+        <div class="relative">
           <input
             v-model="searchQuery"
             @input="debouncedSearch"
@@ -65,11 +64,12 @@
           </div>
         </div>
 
-        <div v-if="searchQuery" class="mt-2 text-sm text-gray-500">
-          "{{ searchQuery }}"の検索結果: {{ todos.length }}件
+        <div v-if="searchQuery" class="mt-2 text-sm text-gray-600">
+          "{{ searchQuery }}" の検索結果: {{ todos.length }}件
         </div>
       </div>
 
+      <!-- Todoリスト -->
       <div class="bg-white rounded-lg shadow-md">
         <!-- ヘッダー -->
         <div class="px-6 py-4 border-b border-gray-200">
@@ -86,6 +86,7 @@
           </div>
         </div>
 
+        <!-- Todoリスト内容 -->
         <div class="p-6">
           <div v-if="loading" class="text-center py-8">
             <p class="text-gray-500">読み込み中...</p>
@@ -136,9 +137,41 @@
                   {{ todo.description }}
                 </p>
 
-                <p class="text-xs text-gray-400 mt-1">
-                  {{ formatDate(todo.created_at) }}
-                </p>
+                <!-- ユーザー情報と作成日時 -->
+                <div class="flex items-center mt-2 space-x-2">
+                  <div class="flex items-center space-x-1">
+                    <div
+                      class="relative group"
+                      @mouseenter="hoveredTodoId = todo.id"
+                      @mouseleave="hoveredTodoId = null"
+                    >
+                      <div
+                        class="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs font-bold cursor-pointer"
+                      >
+                        {{ getInitial(todo.owner?.name || '') }}
+                      </div>
+
+                      <!-- カスタムツールチップ -->
+                      <div
+                        v-if="hoveredTodoId === todo.id"
+                        class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-800 text-white text-xs rounded whitespace-nowrap z-50 pointer-events-none shadow-lg"
+                      >
+                        {{ todo.owner?.name || '不明なユーザー' }}
+                        <!-- 小さな三角形（吹き出しの矢印） -->
+                        <div class="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-2 border-r-2 border-t-2 border-transparent border-t-gray-800"></div>
+                      </div>
+                    </div>
+                    <!-- ユーザー名 -->
+                    <span class="text-xs text-gray-500">
+                      {{ todo.owner?.name || '不明' }}
+                    </span>
+                  </div>
+
+                  <!-- 作成日時 -->
+                  <span class="text-xs text-gray-400">
+                    • {{ formatDate(todo.created_at) }}
+                  </span>
+                </div>
               </div>
 
               <!-- 削除ボタン -->
@@ -186,12 +219,12 @@ const descriptionInput = ref()
 const successMessage = ref('')
 const todos = ref<Todo[]>([])
 const loading = ref(true)
+const hoveredTodoId = ref<number | null>(null)  // カスタムツールチップ用（Todo個別）
 const newTodo = reactive({
   title: '',
   description: ''
 })
 
-// バウンス用のタイマー
 let searchTimeout: NodeJS.Timeout | null = null
 
 const debouncedSearch = () => {
@@ -214,10 +247,12 @@ const refreshTodos = async () => {
   console.log('refreshTodos 開始')
   loading.value = true
   try {
-    // 検索クエリがあれば検索APIを使用
-    const searchParams = searchQuery.value.trim()
-      ? { search: searchQuery.value.trim() }
-      : {}
+    // 明示的に型を指定して安全に構築
+    const searchParams: Record<string, string> = {}
+
+    if (searchQuery.value?.trim()) {
+      searchParams.search = searchQuery.value.trim()
+    }
 
     todos.value = await fetchTodos(searchParams)
     console.log('Todo取得完了:', todos.value.length, '件')
@@ -227,6 +262,7 @@ const refreshTodos = async () => {
     loading.value = false
   }
 }
+
 // 計算プロパティ（セーフガード付き）
 const completedCount = computed(() => {
   if (!Array.isArray(todos.value)) {
@@ -301,6 +337,10 @@ const removeTodo = async (id: number) => {
   if (success) {
     todos.value = todos.value.filter(todo => todo.id !== id)
   }
+}
+
+const getInitial = (name: string): string => {
+  return name ? name.charAt(0).toUpperCase() : '?'
 }
 
 const formatDate = (dateString: string) => {
